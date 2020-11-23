@@ -40,20 +40,19 @@ namespace Core.ServiceBus
                 throw new ArgumentException("Should not be empty", nameof(topicName));
             }
 
-            const string sectionName = "EventBus";
-            EventBusOptions options = configuration.GetSection(sectionName).Get<EventBusOptions>();
-            if (options == null)
-            {
-                throw new InvalidOperationException($"Section '{sectionName}' is not present in configuration file");
-            }
-
-            options.Topic = topicName;
             services.Scan(scan => scan.FromEntryAssembly().AddClasses(classes => classes.AssignableTo(typeof(IIntegrationEventHandler<>))).AsSelf().WithScopedLifetime());
+
+            EventBusOptions options = configuration.GetEventBusOptions();
+            options.Topic = topicName;
 
             if (options.UseAzureServiceBus)
             {
                 services.AddSingleton<IEventConsumer, ServiceBusConsumer, string>(factory =>
-                    new ServiceBusConsumer(options, factory.GetService<ILogger<ServiceBusConsumer>>(), factory),
+                        new ServiceBusConsumer(
+                            options,
+                            factory.GetRequiredService<EventBusSubscriptionsManager>(),
+                            factory,
+                            factory.GetRequiredService<ILogger<ServiceBusConsumer>>()),
                     topicName);
             }
             else
@@ -77,6 +76,18 @@ namespace Core.ServiceBus
                 throw new ArgumentException("Should not be empty", nameof(topicName));
             }
             return serviceProvider.GetRequiredService<IEventConsumer, string>(topicName);
+        }
+
+        private static EventBusOptions GetEventBusOptions(this IConfiguration configuration)
+        {
+            const string sectionName = "EventBus";
+            EventBusOptions options = configuration.GetSection(sectionName).Get<EventBusOptions>();
+            if (options is null)
+            {
+                throw new InvalidOperationException($"Section '{sectionName}' is not present in configuration file");
+            }
+
+            return options;
         }
     }
 }

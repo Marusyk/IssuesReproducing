@@ -7,7 +7,7 @@ namespace Core.ServiceBus
     /// <summary>
     ///     In memory subscriptions manager.
     /// </summary>
-    internal sealed class EventBusSubscriptionsManager
+    public sealed class EventBusSubscriptionsManager
     {
         private readonly Dictionary<string, List<SubscriptionInfo>> _subscriptions;
 
@@ -62,17 +62,17 @@ namespace Core.ServiceBus
         {
             return _subscriptions[eventType];
         }
+    }
 
-        internal sealed class SubscriptionInfo
+    public sealed class SubscriptionInfo
+    {
+        public SubscriptionInfo(Type eventType, Type handlerType)
         {
-            public SubscriptionInfo(Type eventType, Type handlerType)
-            {
-                EventType = eventType;
-                HandlerType = handlerType;
-            }
-
-            public Type HandlerType { get; private set; }
-            public Type EventType { get; private set; }
+            EventType = eventType;
+            HandlerType = handlerType;
         }
+
+        public Type HandlerType { get; private set; }
+        public Type EventType { get; private set; }
     }
 }
